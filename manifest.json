@@ -20,5 +20,35 @@
     { "src": "icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any maskable" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
+  "screenshots": [
+    {
+      "src": "screenshot-home.png",
+      "sizes": "1080x2083",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Munchy Math home screen"
+    },
+    {
+      "src": "screenshot-play.png",
+      "sizes": "1080x2081",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Feed Munchy by solving equations"
+    },
+    {
+      "src": "screenshot-learn.png",
+      "sizes": "1080x2095",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Learn Lab — see it, practise it, race the clock"
+    },
+    {
+      "src": "screenshot-tricks.png",
+      "sizes": "1080x2083",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Math Tricks — clever shortcuts for faster maths"
+    }
+  ],
   "prefer_related_applications": false
 }
