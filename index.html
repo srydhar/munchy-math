@@ -22,7 +22,7 @@
   body{background:linear-gradient(160deg,var(--bg1),var(--bg2)); color:var(--ink); touch-action:manipulation;}
   #app{position:fixed; inset:0; display:flex; flex-direction:column;}
 
-  #hud{display:flex; align-items:center; gap:8px; padding:14px 14px;}
+  #hud{display:flex; align-items:center; gap:8px; padding:14px max(env(safe-area-inset-right,14px),14px) 14px max(env(safe-area-inset-left,14px),14px);}
   .pill{background:rgba(255,255,255,.22); backdrop-filter:blur(6px); border-radius:999px; padding:8px 13px; color:#fff; font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(0,0,0,.12);}
   .pill .ico{font-size:17px;}
   #spacer{flex:1;}
@@ -454,6 +454,41 @@ window.Speak=(function(){
     var o=list[Math.floor(Math.random()*list.length)];
     say(o.t,{pitch:o.p,rate:o.r,munchy:true});
   }
+
+  // --- Reliability fixes ---
+
+  // 1. Chrome/Android: voices load async; re-populate picker when they arrive
+  if(synth && synth.addEventListener){
+    synth.addEventListener("voiceschanged", function(){
+      // Notify the voice picker to refresh if it's open
+      var evt=new Event("munchyvoicesready");
+      window.dispatchEvent(evt);
+    });
+  }
+
+  // 2. Android Chrome: speechSynthesis suspends when app goes to background.
+  //    Resume it the moment the page becomes visible again.
+  document.addEventListener("visibilitychange", function(){
+    if(!synth) return;
+    if(!document.hidden){
+      // Page came back to foreground — kick synth out of suspended state
+      try{ synth.resume(); }catch(e){}
+    } else {
+      // Page going to background — cancel any pending speech to avoid stuck queue
+      try{ synth.cancel(); }catch(e){}
+    }
+  });
+
+  // 3. iOS Safari: speechSynthesis silently dies after ~30s of inactivity.
+  //    A periodic no-op resume() keeps it alive.
+  if(synth){
+    setInterval(function(){
+      if(!document.hidden && !synth.speaking && !synth.pending){
+        try{ synth.resume(); }catch(e){}
+      }
+    }, 10000);
+  }
+
   return { say:say, eq:eq, setLang:setLang, munchyReact:munchyReact, supported:!!synth,
            getVoiceList:getVoiceList, setVoiceName:setVoiceName, getVoiceName:getVoiceName };
 })();
@@ -798,6 +833,8 @@ window.Speak=(function(){
   el("parentBack").addEventListener("click",function(){ el("parentScreen").classList.add("hidden"); });
   el("voicePicker").addEventListener("change",function(){ if(window.Speak) window.Speak.setVoiceName(this.value); });
   el("voiceTestBtn").addEventListener("click",function(){ if(window.Speak) window.Speak.say("Three times four equals twelve!",{pitch:1.4,rate:0.96}); });
+  // Refresh voice picker when Chrome's async voice list arrives
+  window.addEventListener("munchyvoicesready", function(){ populateVoicePicker(); });
   el("soundBtn").addEventListener("click",function(){ DB.sound=!DB.sound; el("soundIco").textContent=DB.sound?"🔊":"🔇"; save(); });
   el("resetBtn").addEventListener("click",function(){ if(window.ProfilesUI) window.ProfilesUI.openReset(); });
 
@@ -860,10 +897,10 @@ window.Speak=(function(){
   .navRow{display:flex; gap:8px; width:100%;}
   .navRow .btn{flex:1 1 0; min-width:0; padding-left:6px; padding-right:6px;}
   /* Primary row: Play + Daily — identical sizing to secondary navRow buttons */
-  #primaryRow #playBtn{flex:1 1 0; min-width:0; padding:clamp(9px,1.6vh,11px) 6px; font-size:clamp(13px,3.2vw,16px);}
+  #primaryRow #playBtn{flex:1 1 0; min-width:0; padding:clamp(9px,1.6vh,11px) 6px; font-size:clamp(15px,4vw,18px);}
   #primaryRow #playBtn:active{box-shadow:0 4px 0 #d9a800;}
   /* Daily Challenge compact button */
-  #dcBanner{flex:1 1 0;min-width:0;background:linear-gradient(135deg,#ff6b6b,#ffd23f);border-radius:18px;padding:clamp(9px,1.6vh,11px) 6px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;cursor:pointer;box-shadow:0 8px 0 #c94b00,0 12px 20px rgba(0,0,0,.2);transition:transform .08s;color:#23204d;text-align:center;min-height:0;}
+  #dcBanner{flex:1 1 0;min-width:0;background:linear-gradient(135deg,#ff6b6b,#ffd23f);border-radius:18px;padding:clamp(9px,1.6vh,11px) 6px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 8px 0 #c94b00,0 12px 20px rgba(0,0,0,.2);transition:transform .08s;color:#23204d;text-align:center;min-height:0;}
   #dcBanner:active{transform:translateY(4px);box-shadow:0 4px 0 #c94b00;}
   #dcBannerLeft{font-size:clamp(13px,3.2vw,16px);line-height:1;}
   #dcBannerMid{flex:unset;}
