@@ -1,10 +1,10 @@
-/* Munchy Math — Service Worker v1.0 */
-const CACHE = 'munchy-math-v1';
+/* Munchy Math — Service Worker v1.1 */
+const CACHE = 'munchy-math-v2';
 const ASSETS = [
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 /* Install: cache all core assets */
@@ -47,7 +47,7 @@ self.addEventListener('fetch', function(e) {
       }).catch(function() {
         /* Offline fallback — serve index.html for navigation requests */
         if (e.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         }
       });
     })
