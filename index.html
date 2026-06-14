@@ -53,19 +53,26 @@
   #energy{height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--soft)); border-radius:999px; transition:width .1s linear;}
 
   .screen{position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:env(safe-area-inset-top,16px) 22px env(safe-area-inset-bottom,22px); text-align:center; gap:10px; z-index:50; background:linear-gradient(160deg,var(--bg1),var(--bg2)); overflow-y:auto; -webkit-overflow-scrolling:touch;}
-  #startScreen{justify-content:center; min-height:-webkit-fill-available;}
+  #startScreen{
+    justify-content:space-evenly;
+    min-height:-webkit-fill-available;
+    padding-top:max(env(safe-area-inset-top,8px),8px);
+    padding-bottom:max(env(safe-area-inset-bottom,8px),8px);
+    gap:clamp(3px,1.2vh,8px);
+  }
+  #startScreen .sub{display:none;}
   .hidden{display:none !important;}
-  h1.logo{font-size:44px; color:#fff; margin:0; text-shadow:0 6px 0 rgba(0,0,0,.12); letter-spacing:1px;}
+  h1.logo{font-size:clamp(30px,8vw,44px); color:#fff; margin:-4px 0 0; text-shadow:0 6px 0 rgba(0,0,0,.12); letter-spacing:1px;}
   .sub{color:#fff; opacity:.92; font-size:16px; margin:0 0 4px; max-width:430px; font-weight:600;}
-  .btn{background:var(--accent); color:var(--ink); border:none; border-radius:18px; padding:15px 32px; font-size:21px; font-weight:900; cursor:pointer; box-shadow:0 8px 0 #d9a800,0 12px 20px rgba(0,0,0,.2); transition:transform .08s;}
+  .btn{background:var(--accent); color:var(--ink); border:none; border-radius:18px; padding:clamp(11px,2vh,15px) 28px; font-size:clamp(18px,4.5vw,21px); font-weight:900; cursor:pointer; box-shadow:0 8px 0 #d9a800,0 12px 20px rgba(0,0,0,.2); transition:transform .08s;}
   .btn:active{transform:translateY(4px); box-shadow:0 4px 0 #d9a800;}
   .btn.alt{background:#fff; box-shadow:0 8px 0 #c7c7c7,0 12px 20px rgba(0,0,0,.2);}
   .btn.alt:active{box-shadow:0 4px 0 #c7c7c7;}
-  .btn.small{padding:11px 20px; font-size:16px;}
+  .btn.small{padding:clamp(9px,1.6vh,11px) 16px; font-size:clamp(13px,3.2vw,16px);}
   .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
-  .chip{background:rgba(255,255,255,.2); color:#fff; border:3px solid transparent; border-radius:16px; padding:11px 17px; font-size:23px; font-weight:900; cursor:pointer; min-width:60px;}
+  .chip{background:rgba(255,255,255,.2); color:#fff; border:3px solid transparent; border-radius:16px; padding:clamp(7px,1.6vh,11px) clamp(11px,3vw,17px); font-size:clamp(18px,5vw,23px); font-weight:900; cursor:pointer; min-width:52px;}
   .chip.on{background:#fff; color:var(--ink); border-color:var(--accent);}
-  .label{color:#fff; font-weight:800; opacity:.9; margin-top:6px;}
+  .label{color:#fff; font-weight:800; opacity:.9; margin-top:2px; font-size:14px;}
   .scoreBig{font-size:60px; font-weight:900; color:#fff; margin:0; text-shadow:0 6px 0 rgba(0,0,0,.12);}
   .topbar{position:absolute; top:14px; left:14px; right:14px; display:flex; justify-content:space-between; align-items:center;}
 
@@ -126,18 +133,20 @@
     <div class="chip" data-diff="hard">Hard</div>
   </div>
   <div id="homeNav">
-    <div id="dcBanner">
-      <div id="dcBannerLeft">🔥</div>
-      <div id="dcBannerMid">
-        <p id="dcBannerTitle">Daily Challenge</p>
-        <p id="dcBannerSub">Loading…</p>
-      </div>
-      <div id="dcBannerRight">
-        <div id="dcStreakNum">0</div>
-        <div id="dcStreakLbl">day streak</div>
+    <div class="navRow" id="primaryRow">
+      <button class="btn" id="playBtn">▶ Play</button>
+      <div id="dcBanner">
+        <div id="dcBannerLeft">🔥</div>
+        <div id="dcBannerMid">
+          <p id="dcBannerTitle">Daily</p>
+          <p id="dcBannerSub">Loading…</p>
+        </div>
+        <div id="dcBannerRight">
+          <div id="dcStreakNum">0</div>
+          <div id="dcStreakLbl">🔥</div>
+        </div>
       </div>
     </div>
-    <button class="btn" id="playBtn" style="width:100%;">Play ▶</button>
     <div class="navRow">
       <button class="btn alt small" id="learnBtn">📚 Learn Lab</button>
       <button class="btn alt small" id="tricksBtn">✨ Math Tricks</button>
@@ -502,7 +511,7 @@ window.Speak=(function(){
   var el=function(id){return document.getElementById(id);};
   var thought=el("thought"), creatureWrap=el("creatureWrap"), field=el("field"), cheer=el("cheer"), energy=el("energy");
 
-  el("startCreature").innerHTML=munchSVG("#a78bfa",140,false);
+  el("startCreature").innerHTML=munchSVG("#a78bfa",100,false);
   drawCreature(false);
   el("soundIco").textContent=DB.sound?"🔊":"🔇";
 
@@ -846,20 +855,23 @@ window.Speak=(function(){
   .hl{color:#ffd23f; font-weight:900;}
   .mcBtn{background:#fff; color:#23204d; border:none; border-radius:16px; padding:16px 24px; font-size:26px; font-weight:900; cursor:pointer; box-shadow:0 5px 0 #c7c7c7; min-width:92px;}
   .mcBtn:active{transform:translateY(3px); box-shadow:0 2px 0 #c7c7c7;}
-  #homeNav{width:320px; max-width:88vw; display:flex; flex-direction:column; gap:8px; margin-top:8px;}
-  @media(max-height:640px){#homeNav{margin-top:4px;} .screen{gap:7px;} h1.logo{font-size:36px;} .sub{font-size:14px;} .chip{padding:8px 13px;}}
+  #homeNav{width:320px; max-width:88vw; display:flex; flex-direction:column; gap:clamp(5px,1.1vh,8px); margin-top:0;}
+  @media(max-height:580px){.navRow .btn{font-size:12px;padding:8px 4px;} #dcBannerLeft{display:none;}}
   .navRow{display:flex; gap:8px; width:100%;}
   .navRow .btn{flex:1 1 0; min-width:0; padding-left:6px; padding-right:6px;}
-  /* Daily Challenge */
-  #dcBanner{width:320px;max-width:88vw;background:linear-gradient(135deg,#ff6b6b,#ffd23f);border-radius:20px;padding:13px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 8px 0 #c94b00,0 12px 24px rgba(0,0,0,.22);transition:transform .08s;color:#23204d;text-align:left;}
+  /* Primary row: Play + Daily — identical sizing to secondary navRow buttons */
+  #primaryRow #playBtn{flex:1 1 0; min-width:0; padding:clamp(9px,1.6vh,11px) 6px; font-size:clamp(13px,3.2vw,16px);}
+  #primaryRow #playBtn:active{box-shadow:0 4px 0 #d9a800;}
+  /* Daily Challenge compact button */
+  #dcBanner{flex:1 1 0;min-width:0;background:linear-gradient(135deg,#ff6b6b,#ffd23f);border-radius:18px;padding:clamp(9px,1.6vh,11px) 6px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;cursor:pointer;box-shadow:0 8px 0 #c94b00,0 12px 20px rgba(0,0,0,.2);transition:transform .08s;color:#23204d;text-align:center;min-height:0;}
   #dcBanner:active{transform:translateY(4px);box-shadow:0 4px 0 #c94b00;}
-  #dcBannerLeft{font-size:36px;line-height:1;}
-  #dcBannerMid{flex:1;}
-  #dcBannerTitle{font-size:16px;font-weight:900;margin:0 0 2px;}
-  #dcBannerSub{font-size:12px;font-weight:700;opacity:.8;margin:0;}
-  #dcBannerRight{text-align:right;}
-  #dcStreakNum{font-size:28px;font-weight:900;line-height:1;}
-  #dcStreakLbl{font-size:11px;font-weight:800;opacity:.8;}
+  #dcBannerLeft{font-size:clamp(13px,3.2vw,16px);line-height:1;}
+  #dcBannerMid{flex:unset;}
+  #dcBannerTitle{font-size:clamp(9px,2.4vw,12px);font-weight:900;margin:0;white-space:nowrap;}
+  #dcBannerSub{display:none;}
+  #dcBannerRight{display:flex;gap:2px;align-items:center;}
+  #dcStreakNum{font-size:clamp(13px,3.2vw,16px);font-weight:900;line-height:1;}
+  #dcStreakLbl{font-size:clamp(13px,3.2vw,16px);line-height:1;}
   .dc-star{font-size:22px;filter:grayscale(1);transition:filter .3s;}
   .dc-star.on{filter:none;}
   #dcPlayEq{font-size:clamp(24px,7vw,40px);font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.14);min-height:60px;display:flex;align-items:center;justify-content:center;padding:8px;}
