@@ -22,8 +22,8 @@
   body{background:linear-gradient(160deg,var(--bg1),var(--bg2)); color:var(--ink); touch-action:manipulation;}
   #app{position:fixed; inset:0; display:flex; flex-direction:column;}
 
-  #hud{display:flex; align-items:center; gap:8px; padding:14px max(env(safe-area-inset-right,14px),14px) 14px max(env(safe-area-inset-left,14px),14px);}
-  .pill{background:rgba(255,255,255,.22); backdrop-filter:blur(6px); border-radius:999px; padding:8px 13px; color:#fff; font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(0,0,0,.12);}
+  #hud{display:flex; align-items:center; gap:8px; padding:14px max(env(safe-area-inset-right,18px),18px) 14px max(env(safe-area-inset-left,14px),14px); flex-wrap:nowrap;}
+  .pill{background:rgba(255,255,255,.22); backdrop-filter:blur(6px); border-radius:999px; padding:8px 13px; color:#fff; font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; box-shadow:none;}
   .pill .ico{font-size:17px;}
   #spacer{flex:1;}
   #streakPill{transition:transform .15s;}
@@ -64,10 +64,10 @@
   .hidden{display:none !important;}
   h1.logo{font-size:clamp(30px,8vw,44px); color:#fff; margin:-4px 0 0; text-shadow:0 6px 0 rgba(0,0,0,.12); letter-spacing:1px;}
   .sub{color:#fff; opacity:.92; font-size:16px; margin:0 0 4px; max-width:430px; font-weight:600;}
-  .btn{background:var(--accent); color:var(--ink); border:none; border-radius:18px; padding:clamp(11px,2vh,15px) 28px; font-size:clamp(18px,4.5vw,21px); font-weight:900; cursor:pointer; box-shadow:0 8px 0 #d9a800,0 12px 20px rgba(0,0,0,.2); transition:transform .08s;}
-  .btn:active{transform:translateY(4px); box-shadow:0 4px 0 #d9a800;}
-  .btn.alt{background:#fff; box-shadow:0 8px 0 #c7c7c7,0 12px 20px rgba(0,0,0,.2);}
-  .btn.alt:active{box-shadow:0 4px 0 #c7c7c7;}
+  .btn{background:var(--accent); color:var(--ink); border:none; border-radius:18px; padding:clamp(11px,2vh,15px) 28px; font-size:clamp(18px,4.5vw,21px); font-weight:900; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15); transition:transform .08s, box-shadow .08s;}
+  .btn:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  .btn.alt{background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.10);}
+  .btn.alt:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.08);}
   .btn.small{padding:clamp(9px,1.6vh,11px) 16px; font-size:clamp(13px,3.2vw,16px);}
   .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
   .chip{background:rgba(255,255,255,.2); color:#fff; border:3px solid transparent; border-radius:16px; padding:clamp(7px,1.6vh,11px) clamp(11px,3vw,17px); font-size:clamp(18px,5vw,23px); font-weight:900; cursor:pointer; min-width:52px;}
@@ -431,23 +431,23 @@ window.Speak=(function(){
   // Munchy's animated character voice — cute, high-pitched, expressive
   var MR={
     happy:[
-      {t:"Mmm! Yummy!",p:2.0,r:0.9},{t:"So tasty!",p:1.95,r:0.88},
-      {t:"Oh! Delicious!",p:1.9,r:0.9},{t:"Yay! More please!",p:2.0,r:0.92}
+      {t:"Mmm! Yummy!",p:1.3,r:0.92},{t:"So tasty!",p:1.25,r:0.90},
+      {t:"Oh! Delicious!",p:1.3,r:0.92},{t:"Yay! More please!",p:1.35,r:0.94}
     ],
     vhappy:[
-      {t:"Yes! That's amazing!",p:2.05,r:0.92},{t:"I love this so much!",p:2.1,r:0.9},
-      {t:"Wahoo! So good!",p:2.0,r:0.95}
+      {t:"Yes! That's amazing!",p:1.4,r:0.94},{t:"I love this so much!",p:1.35,r:0.92},
+      {t:"Wahoo! So good!",p:1.4,r:0.95}
     ],
     surprised:[
-      {t:"Wow!",p:2.2,r:0.85},{t:"Whoa! Amazing!",p:2.1,r:0.88},
-      {t:"Oh my goodness!",p:1.95,r:0.88}
+      {t:"Wow!",p:1.45,r:0.90},{t:"Whoa! Amazing!",p:1.4,r:0.92},
+      {t:"Oh my goodness!",p:1.35,r:0.90}
     ],
     levelup:[
-      {t:"Yes! I grew bigger!",p:2.05,r:0.92},{t:"Yay! New power!",p:2.1,r:0.95},
-      {t:"Woohoo! Level up!",p:2.0,r:0.92}
+      {t:"Yes! I grew bigger!",p:1.4,r:0.94},{t:"Yay! New power!",p:1.4,r:0.95},
+      {t:"Woohoo! Level up!",p:1.45,r:0.94}
     ],
-    full:[{t:"Mmm! I am so happy and full!",p:1.95,r:0.88}],
-    oops:[{t:"Oops!",p:1.7,r:0.88}]
+    full:[{t:"Mmm! I am so happy and full!",p:1.3,r:0.90}],
+    oops:[{t:"Oops!",p:1.2,r:0.88}]
   };
   function munchyReact(type){
     var list=MR[type]||MR.happy;
@@ -832,7 +832,7 @@ window.Speak=(function(){
   el("parentBtn").addEventListener("click",openParent);
   el("parentBack").addEventListener("click",function(){ el("parentScreen").classList.add("hidden"); });
   el("voicePicker").addEventListener("change",function(){ if(window.Speak) window.Speak.setVoiceName(this.value); });
-  el("voiceTestBtn").addEventListener("click",function(){ if(window.Speak) window.Speak.say("Three times four equals twelve!",{pitch:1.4,rate:0.96}); });
+  el("voiceTestBtn").addEventListener("click",function(){ if(window.Speak) window.Speak.say("Three times four equals twelve!",{pitch:1.1,rate:0.92}); });
   // Refresh voice picker when Chrome's async voice list arrives
   window.addEventListener("munchyvoicesready", function(){ populateVoicePicker(); });
   el("soundBtn").addEventListener("click",function(){ DB.sound=!DB.sound; el("soundIco").textContent=DB.sound?"🔊":"🔇"; save(); });
@@ -857,10 +857,10 @@ window.Speak=(function(){
   .skip{display:flex; gap:6px; flex-wrap:wrap; justify-content:center; max-width:440px; margin:6px auto;}
   .skipchip{background:#fff; color:#23204d; border-radius:10px; padding:5px 10px; font-weight:900; font-size:15px;}
   #pad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:280px; margin:8px auto 0;}
-  .key{background:#fff; color:#23204d; border:none; border-radius:14px; padding:15px 0; font-size:26px; font-weight:900; cursor:pointer; box-shadow:0 5px 0 #c7c7c7;}
-  .key:active{transform:translateY(3px); box-shadow:0 2px 0 #c7c7c7;}
-  .key.go{background:var(--good); color:#fff; box-shadow:0 5px 0 #2bbd5e;}
-  .key.del{background:#ff7e7e; color:#fff; box-shadow:0 5px 0 #d65b5b;}
+  .key{background:#fff; color:#23204d; border:none; border-radius:14px; padding:15px 0; font-size:26px; font-weight:900; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.10); transition:transform .08s,box-shadow .08s;}
+  .key:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  .key.go{background:var(--good); color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .key.del{background:#ff7e7e; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.12);}
   .numchip{background:rgba(255,255,255,.2); color:#fff; border:3px solid transparent; border-radius:14px; padding:9px 0; width:48px; font-size:20px; font-weight:900; cursor:pointer; text-align:center;}
   .numchip.on{background:#fff; color:var(--ink); border-color:var(--accent);}
   #mapGrid{display:grid; gap:3px; margin:8px auto; width:100%; max-width:min(94vw,540px);}
@@ -890,18 +890,18 @@ window.Speak=(function(){
   .trickCard .tDone{margin-left:auto; font-size:20px;}
   .trickEx{display:inline-block; background:#fff; color:#23204d; border-radius:10px; padding:4px 12px; font-weight:900; font-size:22px; margin:4px;}
   .hl{color:#ffd23f; font-weight:900;}
-  .mcBtn{background:#fff; color:#23204d; border:none; border-radius:16px; padding:16px 24px; font-size:26px; font-weight:900; cursor:pointer; box-shadow:0 5px 0 #c7c7c7; min-width:92px;}
-  .mcBtn:active{transform:translateY(3px); box-shadow:0 2px 0 #c7c7c7;}
-  #homeNav{width:320px; max-width:88vw; display:flex; flex-direction:column; gap:clamp(5px,1.1vh,8px); margin-top:0;}
+  .mcBtn{background:#fff; color:#23204d; border:none; border-radius:16px; padding:16px 24px; font-size:26px; font-weight:900; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.10); min-width:92px; transition:transform .08s,box-shadow .08s;}
+  .mcBtn:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  #homeNav{width:320px; max-width:88vw; display:flex; flex-direction:column; gap:clamp(6px,1.3vh,10px); margin-top:0;}
   @media(max-height:580px){.navRow .btn{font-size:12px;padding:8px 4px;} #dcBannerLeft{display:none;}}
   .navRow{display:flex; gap:8px; width:100%;}
   .navRow .btn{flex:1 1 0; min-width:0; padding-left:6px; padding-right:6px;}
   /* Primary row: Play + Daily — identical sizing to secondary navRow buttons */
   #primaryRow #playBtn{flex:1 1 0; min-width:0; padding:clamp(9px,1.6vh,11px) 6px; font-size:clamp(15px,4vw,18px);}
-  #primaryRow #playBtn:active{box-shadow:0 4px 0 #d9a800;}
+  #primaryRow #playBtn:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.12);}
   /* Daily Challenge compact button */
-  #dcBanner{flex:1 1 0;min-width:0;background:linear-gradient(135deg,#ff6b6b,#ffd23f);border-radius:18px;padding:clamp(9px,1.6vh,11px) 6px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 8px 0 #c94b00,0 12px 20px rgba(0,0,0,.2);transition:transform .08s;color:#23204d;text-align:center;min-height:0;}
-  #dcBanner:active{transform:translateY(4px);box-shadow:0 4px 0 #c94b00;}
+  #dcBanner{flex:1 1 0;min-width:0;background:linear-gradient(135deg,#ff6b6b,#ffd23f);border-radius:18px;padding:clamp(9px,1.6vh,11px) 6px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .08s,box-shadow .08s;color:#23204d;text-align:center;min-height:0;}
+  #dcBanner:active{transform:scale(0.97);box-shadow:0 1px 4px rgba(0,0,0,.12);}
   #dcBannerLeft{font-size:clamp(13px,3.2vw,16px);line-height:1;}
   #dcBannerMid{flex:unset;}
   #dcBannerTitle{font-size:clamp(9px,2.4vw,12px);font-weight:900;margin:0;white-space:nowrap;}
@@ -912,8 +912,8 @@ window.Speak=(function(){
   .dc-star{font-size:22px;filter:grayscale(1);transition:filter .3s;}
   .dc-star.on{filter:none;}
   #dcPlayEq{font-size:clamp(24px,7vw,40px);font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.14);min-height:60px;display:flex;align-items:center;justify-content:center;padding:8px;}
-  .dc-choice{background:#fff;color:#23204d;border:none;border-radius:16px;padding:17px 10px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 #c7c7c7;display:flex;align-items:center;justify-content:center;min-height:66px;}
-  .dc-choice:active{transform:translateY(3px);box-shadow:0 2px 0 #c7c7c7;}
+  .dc-choice{background:#fff;color:#23204d;border:none;border-radius:16px;padding:17px 10px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.10);display:flex;align-items:center;justify-content:center;min-height:66px;transition:transform .08s,box-shadow .08s;}
+  .dc-choice:active{transform:scale(0.97);box-shadow:0 1px 4px rgba(0,0,0,.08);}
   .dc-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:340px;width:100%;margin:4px auto;}
   #dcProgress{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
   .dc-dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.3);transition:background .3s;}
@@ -928,8 +928,8 @@ window.Speak=(function(){
   .fn{display:inline-block;vertical-align:middle;}
   .thought-eq{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-weight:900;color:#23204d;line-height:1.4;}
   .adv-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:340px;margin:8px auto;}
-  .adv-choice{background:#fff;color:#23204d;border:none;border-radius:18px;padding:20px 14px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 6px 0 #c7c7c7;display:flex;align-items:center;justify-content:center;min-height:72px;gap:4px;}
-  .adv-choice:active{transform:translateY(3px);box-shadow:0 3px 0 #c7c7c7;}
+  .adv-choice{background:#fff;color:#23204d;border:none;border-radius:18px;padding:20px 14px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.10);display:flex;align-items:center;justify-content:center;min-height:72px;gap:4px;transition:transform .08s,box-shadow .08s;}
+  .adv-choice:active{transform:scale(0.97);box-shadow:0 1px 4px rgba(0,0,0,.08);}
   .profRow{display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.16); border-radius:16px; padding:10px 14px; margin:8px 0; color:#fff; cursor:pointer;}
   .profRow.active{outline:3px solid var(--accent);}
   .profRow .pName{font-weight:900; font-size:16px;}
