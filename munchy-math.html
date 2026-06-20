@@ -4,6 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Munchy Math</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#7b5cff" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Munchy Math" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="description" content="A fun maths game for kids ages 4–12. Solve equations and feed Munchy!" />
 <style>
   :root{
     --bg1:#7b5cff; --bg2:#36d1dc; --accent:#ffd23f; --good:#43e97b; --soft:#ff7eb3;
@@ -14,8 +22,8 @@
   body{background:linear-gradient(160deg,var(--bg1),var(--bg2)); color:var(--ink); touch-action:manipulation;}
   #app{position:fixed; inset:0; display:flex; flex-direction:column;}
 
-  #hud{display:flex; align-items:center; gap:8px; padding:14px 14px;}
-  .pill{background:rgba(255,255,255,.22); backdrop-filter:blur(6px); border-radius:999px; padding:8px 13px; color:#fff; font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(0,0,0,.12);}
+  #hud{display:flex; align-items:center; gap:8px; padding:14px max(env(safe-area-inset-right,18px),18px) 14px max(env(safe-area-inset-left,14px),14px); flex-wrap:nowrap;}
+  .pill{background:rgba(255,255,255,.22); backdrop-filter:blur(6px); border-radius:999px; padding:8px 13px; color:#fff; font-size:15px; font-weight:800; display:flex; align-items:center; gap:6px; box-shadow:none;}
   .pill .ico{font-size:17px;}
   #spacer{flex:1;}
   #streakPill{transition:transform .15s;}
@@ -45,19 +53,26 @@
   #energy{height:100%; width:100%; background:linear-gradient(90deg,var(--accent),var(--soft)); border-radius:999px; transition:width .1s linear;}
 
   .screen{position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:env(safe-area-inset-top,16px) 22px env(safe-area-inset-bottom,22px); text-align:center; gap:10px; z-index:50; background:linear-gradient(160deg,var(--bg1),var(--bg2)); overflow-y:auto; -webkit-overflow-scrolling:touch;}
-  #startScreen{justify-content:center; min-height:-webkit-fill-available;}
+  #startScreen{
+    justify-content:space-evenly;
+    min-height:-webkit-fill-available;
+    padding-top:max(env(safe-area-inset-top,8px),8px);
+    padding-bottom:max(env(safe-area-inset-bottom,8px),8px);
+    gap:clamp(3px,1.2vh,8px);
+  }
+  #startScreen .sub{display:none;}
   .hidden{display:none !important;}
-  h1.logo{font-size:44px; color:#fff; margin:0; text-shadow:0 6px 0 rgba(0,0,0,.12); letter-spacing:1px;}
+  h1.logo{font-size:clamp(30px,8vw,44px); color:#fff; margin:-4px 0 0; text-shadow:0 6px 0 rgba(0,0,0,.12); letter-spacing:1px;}
   .sub{color:#fff; opacity:.92; font-size:16px; margin:0 0 4px; max-width:430px; font-weight:600;}
-  .btn{background:var(--accent); color:var(--ink); border:none; border-radius:18px; padding:15px 32px; font-size:21px; font-weight:900; cursor:pointer; box-shadow:0 8px 0 #d9a800,0 12px 20px rgba(0,0,0,.2); transition:transform .08s;}
-  .btn:active{transform:translateY(4px); box-shadow:0 4px 0 #d9a800;}
-  .btn.alt{background:#fff; box-shadow:0 8px 0 #c7c7c7,0 12px 20px rgba(0,0,0,.2);}
-  .btn.alt:active{box-shadow:0 4px 0 #c7c7c7;}
-  .btn.small{padding:11px 20px; font-size:16px;}
+  .btn{background:var(--accent); color:var(--ink); border:none; border-radius:18px; padding:clamp(11px,2vh,15px) 28px; font-size:clamp(18px,4.5vw,21px); font-weight:900; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15); transition:transform .08s, box-shadow .08s;}
+  .btn:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  .btn.alt{background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.10);}
+  .btn.alt:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  .btn.small{padding:clamp(9px,1.6vh,11px) 16px; font-size:clamp(13px,3.2vw,16px);}
   .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
-  .chip{background:rgba(255,255,255,.2); color:#fff; border:3px solid transparent; border-radius:16px; padding:11px 17px; font-size:23px; font-weight:900; cursor:pointer; min-width:60px;}
+  .chip{background:rgba(255,255,255,.2); color:#fff; border:3px solid transparent; border-radius:16px; padding:clamp(7px,1.6vh,11px) clamp(11px,3vw,17px); font-size:clamp(18px,5vw,23px); font-weight:900; cursor:pointer; min-width:52px;}
   .chip.on{background:#fff; color:var(--ink); border-color:var(--accent);}
-  .label{color:#fff; font-weight:800; opacity:.9; margin-top:6px;}
+  .label{color:#fff; font-weight:800; opacity:.9; margin-top:2px; font-size:14px;}
   .scoreBig{font-size:60px; font-weight:900; color:#fff; margin:0; text-shadow:0 6px 0 rgba(0,0,0,.12);}
   .topbar{position:absolute; top:14px; left:14px; right:14px; display:flex; justify-content:space-between; align-items:center;}
 
@@ -118,18 +133,20 @@
     <div class="chip" data-diff="hard">Hard</div>
   </div>
   <div id="homeNav">
-    <div id="dcBanner">
-      <div id="dcBannerLeft">🔥</div>
-      <div id="dcBannerMid">
-        <p id="dcBannerTitle">Daily Challenge</p>
-        <p id="dcBannerSub">Loading…</p>
-      </div>
-      <div id="dcBannerRight">
-        <div id="dcStreakNum">0</div>
-        <div id="dcStreakLbl">day streak</div>
+    <div class="navRow" id="primaryRow">
+      <button class="btn" id="playBtn">▶ Play</button>
+      <div id="dcBanner">
+        <div id="dcBannerLeft">🔥</div>
+        <div id="dcBannerMid">
+          <p id="dcBannerTitle">Daily</p>
+          <p id="dcBannerSub">Loading…</p>
+        </div>
+        <div id="dcBannerRight">
+          <div id="dcStreakNum">0</div>
+          <div id="dcStreakLbl">🔥</div>
+        </div>
       </div>
     </div>
-    <button class="btn" id="playBtn" style="width:100%;">Play ▶</button>
     <div class="navRow">
       <button class="btn alt small" id="learnBtn">📚 Learn Lab</button>
       <button class="btn alt small" id="tricksBtn">✨ Math Tricks</button>
@@ -414,29 +431,64 @@ window.Speak=(function(){
   // Munchy's animated character voice — cute, high-pitched, expressive
   var MR={
     happy:[
-      {t:"Mmm! Yummy!",p:2.0,r:0.9},{t:"So tasty!",p:1.95,r:0.88},
-      {t:"Oh! Delicious!",p:1.9,r:0.9},{t:"Yay! More please!",p:2.0,r:0.92}
+      {t:"Mmm! Yummy!",p:1.3,r:0.92},{t:"So tasty!",p:1.25,r:0.90},
+      {t:"Oh! Delicious!",p:1.3,r:0.92},{t:"Yay! More please!",p:1.35,r:0.94}
     ],
     vhappy:[
-      {t:"Yes! That's amazing!",p:2.05,r:0.92},{t:"I love this so much!",p:2.1,r:0.9},
-      {t:"Wahoo! So good!",p:2.0,r:0.95}
+      {t:"Yes! That's amazing!",p:1.4,r:0.94},{t:"I love this so much!",p:1.35,r:0.92},
+      {t:"Wahoo! So good!",p:1.4,r:0.95}
     ],
     surprised:[
-      {t:"Wow!",p:2.2,r:0.85},{t:"Whoa! Amazing!",p:2.1,r:0.88},
-      {t:"Oh my goodness!",p:1.95,r:0.88}
+      {t:"Wow!",p:1.45,r:0.90},{t:"Whoa! Amazing!",p:1.4,r:0.92},
+      {t:"Oh my goodness!",p:1.35,r:0.90}
     ],
     levelup:[
-      {t:"Yes! I grew bigger!",p:2.05,r:0.92},{t:"Yay! New power!",p:2.1,r:0.95},
-      {t:"Woohoo! Level up!",p:2.0,r:0.92}
+      {t:"Yes! I grew bigger!",p:1.4,r:0.94},{t:"Yay! New power!",p:1.4,r:0.95},
+      {t:"Woohoo! Level up!",p:1.45,r:0.94}
     ],
-    full:[{t:"Mmm! I am so happy and full!",p:1.95,r:0.88}],
-    oops:[{t:"Oops!",p:1.7,r:0.88}]
+    full:[{t:"Mmm! I am so happy and full!",p:1.3,r:0.90}],
+    oops:[{t:"Oops!",p:1.2,r:0.88}]
   };
   function munchyReact(type){
     var list=MR[type]||MR.happy;
     var o=list[Math.floor(Math.random()*list.length)];
     say(o.t,{pitch:o.p,rate:o.r,munchy:true});
   }
+
+  // --- Reliability fixes ---
+
+  // 1. Chrome/Android: voices load async; re-populate picker when they arrive
+  if(synth && synth.addEventListener){
+    synth.addEventListener("voiceschanged", function(){
+      // Notify the voice picker to refresh if it's open
+      var evt=new Event("munchyvoicesready");
+      window.dispatchEvent(evt);
+    });
+  }
+
+  // 2. Android Chrome: speechSynthesis suspends when app goes to background.
+  //    Resume it the moment the page becomes visible again.
+  document.addEventListener("visibilitychange", function(){
+    if(!synth) return;
+    if(!document.hidden){
+      // Page came back to foreground — kick synth out of suspended state
+      try{ synth.resume(); }catch(e){}
+    } else {
+      // Page going to background — cancel any pending speech to avoid stuck queue
+      try{ synth.cancel(); }catch(e){}
+    }
+  });
+
+  // 3. iOS Safari: speechSynthesis silently dies after ~30s of inactivity.
+  //    A periodic no-op resume() keeps it alive.
+  if(synth){
+    setInterval(function(){
+      if(!document.hidden && !synth.speaking && !synth.pending){
+        try{ synth.resume(); }catch(e){}
+      }
+    }, 10000);
+  }
+
   return { say:say, eq:eq, setLang:setLang, munchyReact:munchyReact, supported:!!synth,
            getVoiceList:getVoiceList, setVoiceName:setVoiceName, getVoiceName:getVoiceName };
 })();
@@ -494,7 +546,7 @@ window.Speak=(function(){
   var el=function(id){return document.getElementById(id);};
   var thought=el("thought"), creatureWrap=el("creatureWrap"), field=el("field"), cheer=el("cheer"), energy=el("energy");
 
-  el("startCreature").innerHTML=munchSVG("#a78bfa",140,false);
+  el("startCreature").innerHTML=munchSVG("#a78bfa",100,false);
   drawCreature(false);
   el("soundIco").textContent=DB.sound?"🔊":"🔇";
 
@@ -780,7 +832,9 @@ window.Speak=(function(){
   el("parentBtn").addEventListener("click",openParent);
   el("parentBack").addEventListener("click",function(){ el("parentScreen").classList.add("hidden"); });
   el("voicePicker").addEventListener("change",function(){ if(window.Speak) window.Speak.setVoiceName(this.value); });
-  el("voiceTestBtn").addEventListener("click",function(){ if(window.Speak) window.Speak.say("Three times four equals twelve!",{pitch:1.4,rate:0.96}); });
+  el("voiceTestBtn").addEventListener("click",function(){ if(window.Speak) window.Speak.say("Three times four equals twelve!",{pitch:1.1,rate:0.92}); });
+  // Refresh voice picker when Chrome's async voice list arrives
+  window.addEventListener("munchyvoicesready", function(){ populateVoicePicker(); });
   el("soundBtn").addEventListener("click",function(){ DB.sound=!DB.sound; el("soundIco").textContent=DB.sound?"🔊":"🔇"; save(); });
   el("resetBtn").addEventListener("click",function(){ if(window.ProfilesUI) window.ProfilesUI.openReset(); });
 
@@ -803,10 +857,10 @@ window.Speak=(function(){
   .skip{display:flex; gap:6px; flex-wrap:wrap; justify-content:center; max-width:440px; margin:6px auto;}
   .skipchip{background:#fff; color:#23204d; border-radius:10px; padding:5px 10px; font-weight:900; font-size:15px;}
   #pad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:280px; margin:8px auto 0;}
-  .key{background:#fff; color:#23204d; border:none; border-radius:14px; padding:15px 0; font-size:26px; font-weight:900; cursor:pointer; box-shadow:0 5px 0 #c7c7c7;}
-  .key:active{transform:translateY(3px); box-shadow:0 2px 0 #c7c7c7;}
-  .key.go{background:var(--good); color:#fff; box-shadow:0 5px 0 #2bbd5e;}
-  .key.del{background:#ff7e7e; color:#fff; box-shadow:0 5px 0 #d65b5b;}
+  .key{background:#fff; color:#23204d; border:none; border-radius:14px; padding:15px 0; font-size:26px; font-weight:900; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.10); transition:transform .08s,box-shadow .08s;}
+  .key:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  .key.go{background:var(--good); color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .key.del{background:#ff7e7e; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.12);}
   .numchip{background:rgba(255,255,255,.2); color:#fff; border:3px solid transparent; border-radius:14px; padding:9px 0; width:48px; font-size:20px; font-weight:900; cursor:pointer; text-align:center;}
   .numchip.on{background:#fff; color:var(--ink); border-color:var(--accent);}
   #mapGrid{display:grid; gap:3px; margin:8px auto; width:100%; max-width:min(94vw,540px);}
@@ -836,27 +890,30 @@ window.Speak=(function(){
   .trickCard .tDone{margin-left:auto; font-size:20px;}
   .trickEx{display:inline-block; background:#fff; color:#23204d; border-radius:10px; padding:4px 12px; font-weight:900; font-size:22px; margin:4px;}
   .hl{color:#ffd23f; font-weight:900;}
-  .mcBtn{background:#fff; color:#23204d; border:none; border-radius:16px; padding:16px 24px; font-size:26px; font-weight:900; cursor:pointer; box-shadow:0 5px 0 #c7c7c7; min-width:92px;}
-  .mcBtn:active{transform:translateY(3px); box-shadow:0 2px 0 #c7c7c7;}
-  #homeNav{width:320px; max-width:88vw; display:flex; flex-direction:column; gap:8px; margin-top:8px;}
-  @media(max-height:640px){#homeNav{margin-top:4px;} .screen{gap:7px;} h1.logo{font-size:36px;} .sub{font-size:14px;} .chip{padding:8px 13px;}}
+  .mcBtn{background:#fff; color:#23204d; border:none; border-radius:16px; padding:16px 24px; font-size:26px; font-weight:900; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.10); min-width:92px; transition:transform .08s,box-shadow .08s;}
+  .mcBtn:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  #homeNav{width:320px; max-width:88vw; display:flex; flex-direction:column; gap:clamp(6px,1.3vh,10px); margin-top:0;}
+  @media(max-height:580px){.navRow .btn{font-size:12px;padding:8px 4px;} #dcBannerLeft{display:none;}}
   .navRow{display:flex; gap:8px; width:100%;}
   .navRow .btn{flex:1 1 0; min-width:0; padding-left:6px; padding-right:6px;}
-  /* Daily Challenge */
-  #dcBanner{width:320px;max-width:88vw;background:linear-gradient(135deg,#ff6b6b,#ffd23f);border-radius:20px;padding:13px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 8px 0 #c94b00,0 12px 24px rgba(0,0,0,.22);transition:transform .08s;color:#23204d;text-align:left;}
-  #dcBanner:active{transform:translateY(4px);box-shadow:0 4px 0 #c94b00;}
-  #dcBannerLeft{font-size:36px;line-height:1;}
-  #dcBannerMid{flex:1;}
-  #dcBannerTitle{font-size:16px;font-weight:900;margin:0 0 2px;}
-  #dcBannerSub{font-size:12px;font-weight:700;opacity:.8;margin:0;}
-  #dcBannerRight{text-align:right;}
-  #dcStreakNum{font-size:28px;font-weight:900;line-height:1;}
-  #dcStreakLbl{font-size:11px;font-weight:800;opacity:.8;}
+  /* Primary row: Play + Daily — identical sizing to secondary navRow buttons */
+  #primaryRow #playBtn{flex:1 1 0; min-width:0; padding:clamp(9px,1.6vh,11px) 6px; font-size:clamp(15px,4vw,18px);}
+  #primaryRow #playBtn:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  /* Daily Challenge compact button */
+  #dcBanner{flex:1 1 0;min-width:0;background:linear-gradient(135deg,#ff6b6b,#ffd23f);border-radius:18px;padding:clamp(9px,1.6vh,11px) 6px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .08s,box-shadow .08s;color:#23204d;text-align:center;min-height:0;}
+  #dcBanner:active{transform:scale(0.97);box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  #dcBannerLeft{font-size:clamp(13px,3.2vw,16px);line-height:1;}
+  #dcBannerMid{flex:unset;}
+  #dcBannerTitle{font-size:clamp(9px,2.4vw,12px);font-weight:900;margin:0;white-space:nowrap;}
+  #dcBannerSub{display:none;}
+  #dcBannerRight{display:flex;gap:2px;align-items:center;}
+  #dcStreakNum{font-size:clamp(13px,3.2vw,16px);font-weight:900;line-height:1;}
+  #dcStreakLbl{font-size:clamp(13px,3.2vw,16px);line-height:1;}
   .dc-star{font-size:22px;filter:grayscale(1);transition:filter .3s;}
   .dc-star.on{filter:none;}
   #dcPlayEq{font-size:clamp(24px,7vw,40px);font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.14);min-height:60px;display:flex;align-items:center;justify-content:center;padding:8px;}
-  .dc-choice{background:#fff;color:#23204d;border:none;border-radius:16px;padding:17px 10px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 5px 0 #c7c7c7;display:flex;align-items:center;justify-content:center;min-height:66px;}
-  .dc-choice:active{transform:translateY(3px);box-shadow:0 2px 0 #c7c7c7;}
+  .dc-choice{background:#fff;color:#23204d;border:none;border-radius:16px;padding:17px 10px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.10);display:flex;align-items:center;justify-content:center;min-height:66px;transition:transform .08s,box-shadow .08s;}
+  .dc-choice:active{transform:scale(0.97);box-shadow:0 1px 4px rgba(0,0,0,.08);}
   .dc-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:340px;width:100%;margin:4px auto;}
   #dcProgress{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
   .dc-dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.3);transition:background .3s;}
@@ -871,8 +928,8 @@ window.Speak=(function(){
   .fn{display:inline-block;vertical-align:middle;}
   .thought-eq{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-weight:900;color:#23204d;line-height:1.4;}
   .adv-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:340px;margin:8px auto;}
-  .adv-choice{background:#fff;color:#23204d;border:none;border-radius:18px;padding:20px 14px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 6px 0 #c7c7c7;display:flex;align-items:center;justify-content:center;min-height:72px;gap:4px;}
-  .adv-choice:active{transform:translateY(3px);box-shadow:0 3px 0 #c7c7c7;}
+  .adv-choice{background:#fff;color:#23204d;border:none;border-radius:18px;padding:20px 14px;font-size:20px;font-weight:900;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.10);display:flex;align-items:center;justify-content:center;min-height:72px;gap:4px;transition:transform .08s,box-shadow .08s;}
+  .adv-choice:active{transform:scale(0.97);box-shadow:0 1px 4px rgba(0,0,0,.08);}
   .profRow{display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.16); border-radius:16px; padding:10px 14px; margin:8px 0; color:#fff; cursor:pointer;}
   .profRow.active{outline:3px solid var(--accent);}
   .profRow .pName{font-weight:900; font-size:16px;}
@@ -2715,6 +2772,17 @@ te:{
   apply(cur); buildRow();
   if(window.GoalUI){ window.GoalUI.refreshConfig(); window.GoalUI.refreshHome(); }
 })();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+      console.log('SW registered:', reg.scope);
+    }).catch(function(err) {
+      console.log('SW registration failed:', err);
+    });
+  });
+}
 </script>
 </body>
 </html>
