@@ -1,5 +1,5 @@
 /* ============================================================================
-   Munchy Math — CrazyGames Portal Adapter + Desktop/Polish Pack  (v1.0)
+   Munchy Math — CrazyGames Portal Adapter + Desktop/Polish Pack  (v1.1)
    ----------------------------------------------------------------------------
    Include as the LAST script before </body>:
        <script src="munchy-cg-adapter.js"></script>
@@ -17,6 +17,13 @@
    6. Keyboard controls (number keys answer, P pause, Esc quit menus)
    7. Extra juice: streak-milestone celebrations, score sparkles, drifting
       background math symbols
+   8. Richer Munchy idle animation (gentle walk/bounce cycle, additive CSS only)
+   9. Layered sound design (soft harmonic chime layered on top of correct
+      answers; bigger arpeggio fanfare on level-up) — plays through the same
+      muted-AudioContext pool, so portal muteAudio compliance still applies
+   10. Background scene shift per level tier (color theme + drifting symbols
+       change every few levels) and a bigger level-up moment (banner + flash +
+       big confetti burst + fanfare)
    ========================================================================== */
 (function () {
   "use strict";
@@ -236,14 +243,50 @@
       "  18% { transform: translateX(-50%) scale(1.08); opacity: 1; }",
       "  30% { transform: translateX(-50%) scale(1); }",
       "  80% { transform: translateX(-50%) scale(1); opacity: 1; }",
-      "  100% { transform: translateX(-50%) scale(.8); opacity: 0; } }"
+      "  100% { transform: translateX(-50%) scale(.8); opacity: 0; } }",
+      /* richer idle animation — gentle walk/bounce cycle. Same selector as the  */
+      /* base stylesheet's #creatureWrap{animation:breathe...}; because this    */
+      /* <style> tag is appended after the page's own, equal-specificity rules  */
+      /* resolve in source order, so this cleanly replaces just the animation.  */
+      /* The game's own .pop/.wobble feedback classes use !important and still  */
+      /* take priority over both, so tap feedback is unaffected.                */
+      "#creatureWrap { animation: mmWalk 2.4s ease-in-out infinite; }",
+      "@keyframes mmWalk {",
+      "  0%   { transform: translateY(0)    rotate(0deg)    scale(1); }",
+      "  15%  { transform: translateY(-7px) rotate(-2.5deg) scale(1.02,0.985); }",
+      "  30%  { transform: translateY(0)    rotate(0deg)    scale(1.03,0.97); }",
+      "  45%  { transform: translateY(-3px) rotate(2.5deg)  scale(1.01,0.99); }",
+      "  60%  { transform: translateY(-8px) rotate(0deg)    scale(0.99,1.02); }",
+      "  75%  { transform: translateY(0)    rotate(-1.5deg) scale(1.02,0.98); }",
+      "  100% { transform: translateY(0)    rotate(0deg)    scale(1); }",
+      "}",
+      /* background scene per level tier — smooth crossfade of the gradient */
+      "body { transition: background-color 1.1s ease; }",
+      "#app, .screen { transition: background 1.1s ease; }",
+      /* bigger level-up moment */
+      "#mmLevelBanner { position: fixed; top: 30%; left: 50%; transform: translateX(-50%) scale(0);",
+      "  background: linear-gradient(135deg,#a78bfa,#4ecdc4,#ffd23f); background-size:220% 220%;",
+      "  color: #fff; text-shadow:0 3px 0 rgba(0,0,0,.25); font-weight: 900;",
+      "  font-size: 34px; padding: 20px 40px; border-radius: 26px; z-index: 96;",
+      "  box-shadow: 0 14px 50px rgba(0,0,0,.4); pointer-events: none; text-align:center;",
+      "  font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif; }",
+      "#mmLevelBanner.go { animation: mmLevelBanner 2.1s cubic-bezier(.34,1.56,.64,1) both, mmLevelGrad 2.1s ease both; }",
+      "@keyframes mmLevelBanner { 0% { transform: translateX(-50%) scale(0) rotate(-6deg); opacity: 0; }",
+      "  20% { transform: translateX(-50%) scale(1.15) rotate(3deg); opacity: 1; }",
+      "  35% { transform: translateX(-50%) scale(1) rotate(0deg); }",
+      "  85% { transform: translateX(-50%) scale(1) rotate(0deg); opacity: 1; }",
+      "  100% { transform: translateX(-50%) scale(.75) rotate(4deg); opacity: 0; } }",
+      "@keyframes mmLevelGrad { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }",
+      "#mmFlash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 93; }",
+      "#mmFlash.go { animation: mmFlash .5s ease-out both; }",
+      "@keyframes mmFlash { 0% { opacity: .55; } 100% { opacity: 0; } }"
     ].join("\n");
     var st = document.createElement("style");
     st.textContent = css;
     document.head.appendChild(st);
   }
-  function spawnDrifters() {
-    var syms = ["＋", "−", "×", "÷", "=", "★", "3", "7", "9"];
+  function spawnDrifters(customSyms) {
+    var syms = customSyms || ["＋", "−", "×", "÷", "=", "★", "3", "7", "9"];
     for (var i = 0; i < 14; i++) {
       var d = document.createElement("div");
       d.className = "mm-drift";
@@ -309,6 +352,119 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 7.  Layered sound design.                                          *
+   *     A soft supplementary layer on top of the game's own SFX — a    *
+   *     harmonic chime under correct answers, a bigger arpeggio        *
+   *     fanfare on level-up. Uses window.AudioContext, which is the    *
+   *     same constructor patched in section 0, so muteAudio compliance *
+   *     and portal suspend/resume still cover this layer.              *
+   * ------------------------------------------------------------------ */
+  var layerCtx = null;
+  function layerAudio() {
+    if (!layerCtx) safe(function () {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) layerCtx = new AC();
+    });
+    return layerCtx;
+  }
+  function chimeNote(freq, start, dur, gainPeak, type) {
+    var a = layerAudio(); if (!a) return;
+    var o = a.createOscillator(), g = a.createGain();
+    o.type = type || "sine"; o.frequency.value = freq;
+    o.connect(g); g.connect(a.destination);
+    var t0 = a.currentTime + start;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gainPeak, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function playCorrectChime() {
+    // soft major-third shimmer, quiet so it layers under the game's own beep
+    safe(function () {
+      chimeNote(1046.5, 0, 0.30, 0.05, "sine");   // C6
+      chimeNote(1318.5, 0.05, 0.32, 0.045, "sine"); // E6
+    });
+  }
+  function playLevelFanfare() {
+    // bright ascending arpeggio, a bit louder — the "big moment" layer
+    safe(function () {
+      var notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5 E5 G5 C6 E6
+      notes.forEach(function (f, i) {
+        chimeNote(f, i * 0.09, 0.35, 0.075, "triangle");
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 8.  Background scene per level tier + bigger level-up moment.      *
+   *     Observed off the existing #level HUD span — no game code       *
+   *     changes needed. Tiers just re-theme the existing CSS vars      *
+   *     (--bg1/--bg2) the game already uses for its background.        *
+   * ------------------------------------------------------------------ */
+  var LEVEL_THEMES = [
+    { max: 2,        bg1: "#7b5cff", bg2: "#36d1dc", syms: ["＋", "−", "×", "÷", "=", "★", "3", "7", "9"] }, // dawn
+    { max: 4,        bg1: "#ff7eb3", bg2: "#ff8c42", syms: ["＋", "−", "×", "÷", "☀", "★", "4", "8"] },       // sunset
+    { max: 6,        bg1: "#2b2467", bg2: "#5dade2", syms: ["✦", "✧", "×", "÷", "☾", "★", "6", "9"] },       // night sky
+    { max: Infinity, bg1: "#ffb347", bg2: "#a78bfa", syms: ["👑", "★", "✦", "×", "÷", "12", "20"] }           // legendary
+  ];
+  function themeFor(level) {
+    for (var i = 0; i < LEVEL_THEMES.length; i++) if (level <= LEVEL_THEMES[i].max) return LEVEL_THEMES[i];
+    return LEVEL_THEMES[LEVEL_THEMES.length - 1];
+  }
+  var curTierIdx = -1;
+  function applyScene(level) {
+    var th = themeFor(level);
+    var idx = LEVEL_THEMES.indexOf(th);
+    document.documentElement.style.setProperty("--bg1", th.bg1);
+    document.documentElement.style.setProperty("--bg2", th.bg2);
+    if (idx !== curTierIdx) {
+      curTierIdx = idx;
+      safe(function () {
+        // swap drifting symbols to match the new scene without piling up nodes
+        Array.prototype.forEach.call(document.querySelectorAll(".mm-drift"), function (n) { n.remove(); });
+        spawnDrifters(th.syms);
+      });
+    }
+  }
+  function flash() {
+    var f = document.getElementById("mmFlash");
+    if (!f) { f = document.createElement("div"); f.id = "mmFlash"; document.body.appendChild(f); }
+    f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+  }
+  function celebrateLevelUp(level) {
+    var b = document.getElementById("mmLevelBanner");
+    if (!b) { b = document.createElement("div"); b.id = "mmLevelBanner"; document.body.appendChild(b); }
+    b.textContent = "🎉 LEVEL " + level + "! 🎉";
+    b.classList.remove("go"); void b.offsetWidth; b.classList.add("go");
+    flash();
+    burst(window.innerWidth / 2, window.innerHeight * 0.35, 42);
+    setTimeout(function () { burst(window.innerWidth / 2, window.innerHeight * 0.35, 24); }, 220);
+    playLevelFanfare();
+  }
+  function hookLevelScenes() {
+    var levelEl = document.getElementById("level");
+    if (!levelEl) return;
+    var last = parseInt(levelEl.textContent, 10) || 1;
+    applyScene(last);
+    new MutationObserver(function () {
+      var v = parseInt(levelEl.textContent, 10) || 1;
+      if (v > last) celebrateLevelUp(v);
+      if (v !== last) applyScene(v);
+      last = v;
+    }).observe(levelEl, { childList: true, characterData: true, subtree: true });
+  }
+  function hookCorrectChime() {
+    var scoreEl = document.getElementById("score");
+    if (!scoreEl) return;
+    var last = parseInt(scoreEl.textContent, 10) || 0;
+    new MutationObserver(function () {
+      var v = parseInt(scoreEl.textContent, 10) || 0;
+      if (v > last) playCorrectChime();
+      last = v;
+    }).observe(scoreEl, { childList: true, characterData: true, subtree: true });
+  }
+
+  /* ------------------------------------------------------------------ *
    * boot                                                               *
    * ------------------------------------------------------------------ */
   function boot() {
@@ -317,6 +473,8 @@
     safe(hookGameplayEvents);
     safe(hookKeyboard);
     safe(hookHUD);
+    safe(hookLevelScenes);
+    safe(hookCorrectChime);
     safe(hookSDK);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
