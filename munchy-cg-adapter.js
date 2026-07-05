@@ -1,5 +1,5 @@
 /* ============================================================================
-   Munchy Math — CrazyGames Portal Adapter + Desktop/Polish Pack  (v1.1)
+   Munchy Math — CrazyGames Portal Adapter + Desktop/Polish Pack  (v1.2)
    ----------------------------------------------------------------------------
    Include as the LAST script before </body>:
        <script src="munchy-cg-adapter.js"></script>
@@ -24,6 +24,13 @@
    10. Background scene shift per level tier (color theme + drifting symbols
        change every few levels) and a bigger level-up moment (banner + flash +
        big confetti burst + fanfare)
+   11. Intro sequence on page load: "Learn Like a Pro Labs" studio splash (spinning
+       gradient ring, glowing badge, shine-sweep wordmark) -> Munchy Math logo ->
+       loading progress bar -> reveals the start screen
+   12. "Get Ready! 5-4-3-2-1" countdown the moment Play is actually clicked,
+       intercepted via document-capture so it runs before the game's own
+       click handler and replays faithfully afterward — no timers/energy
+       ticking during the countdown
    ========================================================================== */
 (function () {
   "use strict";
@@ -87,6 +94,21 @@
     });
   }
 
+  // loadingStop() is deferred until the intro splash (section 9 below) also
+  // finishes, so from the portal's point of view the splash IS the loading
+  // screen — instantPlay() below still fires the moment the SDK is ready,
+  // independent of the splash timer, so actual gameplayStart() isn't delayed.
+  var sdkReady = false, loadingStopped = false;
+  function maybeStopLoading() {
+    if (sdkReady && splashDone && !loadingStopped && active()) {
+      loadingStopped = true;
+      safe(function () { CG.sdk.game.loadingStop(); });
+    }
+  }
+  // Safety net: if the splash overlay fails to build/run for any reason,
+  // never leave the portal's loading screen stuck waiting on it.
+  setTimeout(function () { splashDone = true; maybeStopLoading(); }, 8000);
+
   function hookSDK() {
     var s = document.createElement("script");
     s.src = "https://sdk.crazygames.com/crazygames-sdk-v3.js";
@@ -97,7 +119,8 @@
           CG.env = CG.sdk.environment || "disabled";
           if (!active()) return;
           safe(function () { CG.sdk.game.loadingStart(); });
-          safe(function () { CG.sdk.game.loadingStop(); }); // DOM is already interactive
+          sdkReady = true;
+          maybeStopLoading();
           // ---- muteAudio compliance ----
           safe(function () {
             if (CG.sdk.game.settings && CG.sdk.game.settings.muteAudio) setMuted(true);
@@ -279,7 +302,85 @@
       "@keyframes mmLevelGrad { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }",
       "#mmFlash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 93; }",
       "#mmFlash.go { animation: mmFlash .5s ease-out both; }",
-      "@keyframes mmFlash { 0% { opacity: .55; } 100% { opacity: 0; } }"
+      "@keyframes mmFlash { 0% { opacity: .55; } 100% { opacity: 0; } }",
+      /* intro splash: studio card -> game logo -> loading bar (page load) */
+      /* + separate "Get Ready" 5..1 countdown overlay (fires on Play click) */
+      "#mmSplash, #mmReady { position: fixed; inset: 0; z-index: 999; display: flex; flex-direction: column;",
+      "  align-items: center; justify-content: center; gap: 14px; overflow: hidden;",
+      "  background: radial-gradient(120% 90% at 50% 20%,var(--bg2),var(--bg1) 75%); opacity: 1; transition: opacity .5s ease;",
+      "  font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif; text-align: center; padding: 20px; }",
+      "#mmSplash.mm-out, #mmReady.mm-out { opacity: 0; pointer-events: none; }",
+      "#mmAmbient { position: absolute; inset: 0; z-index: 0; overflow: hidden; }",
+      "#mmAmbient .mmRay { position: absolute; inset: -60%;",
+      "  background: conic-gradient(from 0deg,transparent 0deg,rgba(255,255,255,.07) 35deg,transparent 90deg,transparent 200deg,rgba(255,255,255,.05) 240deg,transparent 300deg);",
+      "  animation: mmRaySpin 44s linear infinite; }",
+      "@keyframes mmRaySpin { to { transform: rotate(360deg); } }",
+      ".mmBokeh { position: absolute; bottom: -40px; border-radius: 50%; filter: blur(1px);",
+      "  background: radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,0) 72%); animation: mmBokehFloat linear infinite; }",
+      "@keyframes mmBokehFloat { 0% { transform: translateY(0) scale(.8); opacity: 0; } 12% { opacity: .5; } 88% { opacity: .35; }",
+      "  100% { transform: translateY(-115vh) scale(1.15); opacity: 0; } }",
+      "#mmSplash .mmBar { position: absolute; left: 0; right: 0; height: 30px; background: #16132b; z-index: 6; transition: transform .55s cubic-bezier(.6,0,.3,1); }",
+      "#mmSplash .mmBarTop { top: 0; }",
+      "#mmSplash .mmBarBot { bottom: 0; }",
+      "#mmSplash.mm-reveal .mmBarTop { transform: translateY(-100%); }",
+      "#mmSplash.mm-reveal .mmBarBot { transform: translateY(100%); }",
+      "#mmWipe { position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0;",
+      "  background: linear-gradient(100deg,transparent 42%,rgba(255,255,255,.85) 50%,transparent 58%); transform: translateX(-140%); }",
+      "#mmWipe.go { animation: mmWipeSweep .6s ease both; }",
+      "@keyframes mmWipeSweep { 0% { transform: translateX(-140%); opacity: 0; } 12% { opacity: 1; } 55% { transform: translateX(0%); opacity: 1; }",
+      "  100% { transform: translateX(140%); opacity: 0; } }",
+      "#mmSplash .mm-phase { position: relative; z-index: 1; display: none; flex-direction: column; align-items: center; gap: 14px; }",
+      "#mmSplash .mm-phase.on { display: flex; animation: mmSplashIn .6s cubic-bezier(.22,1,.36,1) both; }",
+      "@keyframes mmSplashIn { 0% { opacity: 0; transform: scale(.82) translateY(16px); filter: blur(5px); }",
+      "  60% { filter: blur(0); } 100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); } }",
+      "#mmStudioTag { font-size: 14px; font-weight: 700; color: #fff; opacity: .75; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 2px; }",
+      "@keyframes mmImpact { 0% { transform: scale(.3) rotate(-8deg); opacity: 0; } 55% { transform: scale(1.12) rotate(2deg); opacity: 1; }",
+      "  75% { transform: scale(.96) rotate(-1deg); } 100% { transform: scale(1) rotate(0deg); } }",
+      "#mmStudioBadge { position: relative; width: 172px; height: 130px; display: flex; align-items: center; justify-content: center; }",
+      "#mmBurstRing { position: absolute; width: 190px; height: 150px; left: 50%; top: 50%; margin: -75px 0 0 -95px; border-radius: 50%;",
+      "  background: radial-gradient(circle,rgba(255,255,255,.6),rgba(255,255,255,0) 70%); animation: mmBurstPulse 1s ease-out both; }",
+      "@keyframes mmBurstPulse { 0% { transform: scale(.15); opacity: 1; } 100% { transform: scale(1.7); opacity: 0; } }",
+      "#mmStudioLogoImg { position: relative; width: 172px; height: auto; display: block;",
+      "  filter: drop-shadow(0 10px 20px rgba(0,0,0,.35)) drop-shadow(0 0 26px rgba(255,255,255,.4));",
+      "  animation: mmImpact .7s cubic-bezier(.34,1.56,.64,1) both; }",
+      ".mmSparkle { position: absolute; font-size: 16px; color: #fff; text-shadow: 0 0 8px rgba(255,255,255,.9); animation: mmTwinkle 1.6s ease-in-out infinite; }",
+      ".mmSparkle.s1 { top: -8px; right: 10px; }",
+      ".mmSparkle.s2 { bottom: 10px; left: -6px; font-size: 12px; animation-delay: .45s; }",
+      ".mmSparkle.s3 { top: 46px; left: -14px; font-size: 10px; animation-delay: .9s; }",
+      "@keyframes mmTwinkle { 0%,100% { opacity: .25; transform: scale(.7) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(15deg); } }",
+      "#mmStudioName { font-size: clamp(21px,5.2vw,30px); font-weight: 900; letter-spacing: .5px; text-transform: uppercase; line-height: 1.25; max-width: 300px;",
+      "  background: linear-gradient(100deg,#fff 0%,#fff 35%,#ffe9a8 45%,#fff 55%,#fff 100%);",
+      "  background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;",
+      "  animation: mmShine 2.4s ease-in-out .3s 1; text-shadow: 0 6px 14px rgba(0,0,0,.3); }",
+      "@keyframes mmShine { 0% { background-position: 140% 0; } 60%,100% { background-position: -40% 0; } }",
+      "#mmStudioSub { font-size: 11px; font-weight: 800; letter-spacing: 5px; color: #fff; opacity: .9;",
+      "  padding: 5px 15px; border: 1.5px solid rgba(255,255,255,.5); border-radius: 999px; margin-top: 2px; }",
+      "#mmGameLogoWrap { position: relative; width: 170px; height: 170px; display: flex; align-items: center; justify-content: center; }",
+      "#mmGameGlow { position: absolute; width: 190px; height: 190px; border-radius: 50%;",
+      "  background: radial-gradient(circle,rgba(255,255,255,.4),rgba(255,255,255,0) 70%); animation: mmGameGlowPulse 1.6s ease-in-out infinite; }",
+      "@keyframes mmGameGlowPulse { 0%,100% { opacity: .65; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }",
+      "#mmGameLogoImg { position: relative; width: 168px; height: 168px; display: block;",
+      "  filter: drop-shadow(0 12px 22px rgba(0,0,0,.3));",
+      "  animation: mmImpact .7s cubic-bezier(.34,1.56,.64,1) both, mmFaceBounce 1.9s ease-in-out .7s infinite; }",
+      "@keyframes mmFaceBounce { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-9px) rotate(-2.5deg); } }",
+      "#mmGameName { font-size: clamp(28px,7vw,40px); font-weight: 900; color: #fff; text-shadow: 0 6px 0 rgba(0,0,0,.15); }",
+      "#mmGameTag { font-size: 11px; font-weight: 800; letter-spacing: 3px; color: #fff; opacity: .9;",
+      "  padding: 5px 15px; border: 1.5px solid rgba(255,255,255,.5); border-radius: 999px; margin-top: 6px; }",
+      "#mmLoadLabel { font-size: 13px; font-weight: 800; color: #fff; opacity: .85; letter-spacing: 2px; text-transform: uppercase; min-width: 130px; text-align: left; }",
+      "#mmLoadRow { display: flex; align-items: baseline; gap: 8px; }",
+      "#mmLoadPct { font-size: 13px; font-weight: 800; color: var(--accent); opacity: .95; min-width: 32px; }",
+      "#mmLoadWrap { position: relative; width: 220px; height: 10px; border-radius: 999px; background: rgba(255,255,255,.25); overflow: hidden;",
+      "  box-shadow: inset 0 1px 3px rgba(0,0,0,.25); }",
+      "#mmLoadBar { position: relative; height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg,#ffd23f,#ff7eb3); transition: width .12s linear; overflow: hidden; }",
+      "#mmLoadBar::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg,transparent 30%,rgba(255,255,255,.65) 50%,transparent 70%);",
+      "  background-size: 200% 100%; animation: mmBarShine 1s linear infinite; }",
+      "@keyframes mmBarShine { 0% { background-position: 160% 0; } 100% { background-position: -60% 0; } }",
+      "#mmLoadTip { font-size: 12px; color: #fff; opacity: .8; max-width: 260px; margin-top: 4px; font-weight: 700; min-height: 32px; }",
+      "#mmCountLabel { font-size: 16px; font-weight: 800; color: #fff; opacity: .85; letter-spacing: 1px; }",
+      "#mmCountNum { font-size: 88px; font-weight: 900; color: var(--accent); text-shadow: 0 8px 0 rgba(0,0,0,.2); }",
+      "#mmCountNum.pop { animation: mmCountPop .5s cubic-bezier(.34,1.56,.64,1); }",
+      "@keyframes mmCountPop { 0% { transform: scale(.4); opacity: 0; } 50% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }",
+      "#mmSkip { position: absolute; bottom: 22px; font-size: 13px; color: #fff; opacity: .6; font-weight: 700; }"
     ].join("\n");
     var st = document.createElement("style");
     st.textContent = css;
@@ -465,10 +566,210 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 9.  Intro splash: "Learn Like a Pro Labs" studio card -> Munchy     *
+   *     Math logo -> loading progress bar, then fades to reveal the    *
+   *     start screen. Runs once per page load, independent of the      *
+   *     CrazyGames SDK — on GitHub Pages/PWA it plays the same way.    *
+   *     On the portal, loadingStop() (section 1) is held back until    *
+   *     splashDone is true, so this overlay IS the loading screen from *
+   *     the SDK's point of view; instantPlay() still fires the moment  *
+   *     the SDK is ready, independent of this timer.                   *
+   *     The 5-4-3-2-1 "Get Ready" moment now happens separately, when  *
+   *     the player actually clicks Play — see section 10 below.        *
+   * ------------------------------------------------------------------ */
+  var splashDone = false;
+  function runCountdown(done) {
+    var n = 5;
+    var numEl = document.getElementById("mmCountNum");
+    var labelEl = document.getElementById("mmCountLabel");
+    function pop(el) { el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
+    function tick() {
+      if (n < 1) {
+        if (labelEl) labelEl.textContent = "";
+        numEl.textContent = "GO!";
+        pop(numEl);
+        safe(function () { chimeNote(1318.5, 0, 0.28, 0.09, "triangle"); chimeNote(1568, 0.05, 0.3, 0.08, "triangle"); });
+        setTimeout(done, 420);
+        return;
+      }
+      numEl.textContent = n;
+      pop(numEl);
+      safe(function () { chimeNote(n === 1 ? 880 : 660, 0, 0.18, 0.06, "sine"); });
+      n--;
+      setTimeout(tick, 560);
+    }
+    tick();
+  }
+  var LOAD_TIPS = [
+    "Tip: streaks of 5+ light up a bonus golden treat",
+    "Tip: try Math Tricks for clever mental shortcuts",
+    "Tip: the Mastery Map shows exactly what to practice next",
+    "Tip: everyone gets their own profile and progress",
+    "Tip: press 1-9 on your keyboard to answer fast"
+  ];
+  function runLoadingBar(done) {
+    var bar = document.getElementById("mmLoadBar");
+    var pctEl = document.getElementById("mmLoadPct");
+    var tipEl = document.getElementById("mmLoadTip");
+    var labelEl = document.getElementById("mmLoadLabel");
+    var pct = 0, dots = 0, tipIdx = 0;
+    if (tipEl) tipEl.textContent = LOAD_TIPS[0];
+    var dotIv = setInterval(function () {
+      dots = (dots + 1) % 4;
+      if (labelEl) labelEl.textContent = "Loading" + new Array(dots + 1).join(".");
+    }, 350);
+    var tipIv = setInterval(function () {
+      tipIdx = (tipIdx + 1) % LOAD_TIPS.length;
+      if (tipEl) tipEl.textContent = LOAD_TIPS[tipIdx];
+    }, 1700);
+    var iv = setInterval(function () {
+      var step = pct < 70 ? (4 + Math.random() * 8) : (1 + Math.random() * 3);
+      pct = Math.min(100, pct + step);
+      if (bar) bar.style.width = pct + "%";
+      if (pctEl) pctEl.textContent = Math.round(pct) + "%";
+      if (pct >= 100) {
+        clearInterval(iv); clearInterval(dotIv); clearInterval(tipIv);
+        if (labelEl) labelEl.textContent = "Ready!";
+        setTimeout(done, 320);
+      }
+    }, 90);
+  }
+  function spawnBokeh(container) {
+    for (var i = 0; i < 9; i++) {
+      var b = document.createElement("div");
+      b.className = "mmBokeh";
+      var size = 14 + Math.random() * 30;
+      b.style.width = size + "px"; b.style.height = size + "px";
+      b.style.left = (Math.random() * 96) + "%";
+      b.style.animationDuration = (7 + Math.random() * 6) + "s";
+      b.style.animationDelay = (-Math.random() * 12) + "s";
+      container.appendChild(b);
+    }
+  }
+  function playWhoosh(rising) {
+    safe(function () {
+      var a = layerAudio(); if (!a) return;
+      var o = a.createOscillator(), g = a.createGain();
+      o.type = "sine"; g.gain.value = 0.0001;
+      o.connect(g); g.connect(a.destination);
+      var t0 = a.currentTime;
+      o.frequency.setValueAtTime(rising ? 260 : 620, t0);
+      o.frequency.exponentialRampToValueAtTime(rising ? 620 : 180, t0 + 0.32);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.05, t0 + 0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+      o.start(t0); o.stop(t0 + 0.36);
+    });
+  }
+  function playImpactThud() {
+    safe(function () { chimeNote(130, 0, 0.22, 0.09, "sine"); chimeNote(196, 0.02, 0.18, 0.05, "triangle"); });
+  }
+  function buildAndRunSplash() {
+    var root = document.createElement("div");
+    root.id = "mmSplash";
+    root.innerHTML =
+      '<div id="mmAmbient"><div class="mmRay"></div></div>' +
+      '<div class="mmBar mmBarTop"></div><div class="mmBar mmBarBot"></div>' +
+      '<div id="mmWipe"></div>' +
+      '<div class="mm-phase" id="mmPhaseStudio">' +
+        '<div id="mmStudioTag">Presents</div>' +
+        '<div id="mmStudioBadge"><div id="mmBurstRing"></div>' +
+          '<img id="mmStudioLogoImg" src="studio-logo.png" alt="">' +
+          '<div class="mmSparkle s1">✦</div><div class="mmSparkle s2">✧</div><div class="mmSparkle s3">✦</div></div>' +
+        '<div id="mmStudioName">Learn Like a Pro</div>' +
+        '<div id="mmStudioSub">LABS</div>' +
+      '</div>' +
+      '<div class="mm-phase" id="mmPhaseGame">' +
+        '<div id="mmGameLogoWrap"><div id="mmGameGlow"></div><img id="mmGameLogoImg" src="munchy-face.png" alt=""></div>' +
+        '<div id="mmGameName">Munchy Math</div>' +
+        '<div id="mmGameTag">FEED · LEARN · GROW</div>' +
+      '</div>' +
+      '<div class="mm-phase" id="mmPhaseLoad">' +
+        '<div id="mmLoadRow"><div id="mmLoadLabel">Loading</div><div id="mmLoadPct">0%</div></div>' +
+        '<div id="mmLoadWrap"><div id="mmLoadBar"></div></div>' +
+        '<div id="mmLoadTip"></div>' +
+      '</div>' +
+      '<div id="mmSkip">Tap to skip</div>';
+    document.body.appendChild(root);
+    safe(function () { spawnBokeh(document.getElementById("mmAmbient")); });
+    var phases = ["mmPhaseStudio", "mmPhaseGame", "mmPhaseLoad"];
+    function showPhase(i) {
+      phases.forEach(function (id, j) { document.getElementById(id).classList.toggle("on", j === i); });
+      if (i > 0) {
+        var w = document.getElementById("mmWipe");
+        w.classList.remove("go"); void w.offsetWidth; w.classList.add("go");
+        playWhoosh(i === 1);
+        if (i === 1) setTimeout(playImpactThud, 260);
+      }
+    }
+    var finished = false;
+    function finish() {
+      if (finished) return;
+      finished = true;
+      root.classList.add("mm-reveal");
+      setTimeout(function () {
+        root.classList.add("mm-out");
+        setTimeout(function () { safe(function () { root.remove(); }); }, 500);
+      }, 320);
+      splashDone = true;
+      maybeStopLoading();
+    }
+    root.addEventListener("click", finish);
+    showPhase(0);
+    setTimeout(function () {
+      showPhase(1);
+      setTimeout(function () {
+        showPhase(2);
+        runLoadingBar(finish);
+      }, 1400);
+    }, 2500);
+    // absolute safety net — never leave the splash stuck over the game
+    setTimeout(finish, 12000);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 10. "Get Ready!" 5-4-3-2-1 countdown on the Play click itself.      *
+   *     A capture-phase listener on document runs before the game's    *
+   *     own click handler on #playBtn (capture always resolves before  *
+   *     a target's own listeners, regardless of registration order),  *
+   *     so the first real click is swallowed, the countdown overlay    *
+   *     plays, and then the click is faithfully replayed — the game    *
+   *     starts exactly as it would have, just a couple seconds later,  *
+   *     with no energy/timer state touched in between.                 *
+   * ------------------------------------------------------------------ */
+  function showGetReadyCountdown(done) {
+    var root = document.createElement("div");
+    root.id = "mmReady";
+    root.innerHTML = '<div id="mmCountLabel">Get Ready!</div><div id="mmCountNum">5</div>';
+    document.body.appendChild(root);
+    runCountdown(function () {
+      root.classList.add("mm-out");
+      setTimeout(function () { safe(function () { root.remove(); }); done(); }, 350);
+    });
+  }
+  function hookPlayCountdown() {
+    var pending = false;
+    document.addEventListener("click", function (ev) {
+      if (pending) return;
+      var t = ev.target && ev.target.closest && ev.target.closest("#playBtn");
+      if (!t) return;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      showGetReadyCountdown(function () {
+        pending = true;
+        safe(function () { t.click(); });
+        pending = false;
+      });
+    }, true);
+  }
+
+  /* ------------------------------------------------------------------ *
    * boot                                                               *
    * ------------------------------------------------------------------ */
   function boot() {
     safe(injectDesktopCSS);
+    safe(buildAndRunSplash);
+    safe(hookPlayCountdown);
     safe(spawnDrifters);
     safe(hookGameplayEvents);
     safe(hookKeyboard);

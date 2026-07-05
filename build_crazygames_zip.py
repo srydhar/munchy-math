@@ -55,6 +55,11 @@ def main():
     for f in os.listdir(repo):
         if re.match(r"icon-\d+\.png$", f):
             shutil.copy(os.path.join(repo, f), build)
+    # splash-screen assets used by the adapter's intro sequence
+    for extra in ("studio-logo.png", "munchy-face.png"):
+        extra_src = os.path.join(repo, extra)
+        if os.path.exists(extra_src):
+            shutil.copy(extra_src, build)
 
     # 4. zip
     zpath = os.path.join(here, "munchy-math-crazygames.zip")

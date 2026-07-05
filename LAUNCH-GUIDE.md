@@ -80,7 +80,17 @@ Made for ages 5–12, loved by parents and teachers:
 
 ## Remaining work for the next session (Sonnet 5 is fine)
 
-1. Run the build against the real repo + verify in browser (steps 1–3 above)
-2. **Polish pass on the full source** (couldn't be done here without the complete file): richer Munchy animations (walk/bounce cycles), layered sound design, background scenes per level, bigger level-up moments. All doable directly in `index.html` once the folder is connected.
-3. Optional: adapter variants for GameDistribution/GamePix SDKs
-4. After Munchy Math is live and stable: reuse this exact pipeline for the English-learning game (word–picture matching with the same monster, profiles, mastery map — a "Munchy Words" sequel keeps the brand).
+1. ✅ Done — build ran against the real repo, `munchy-math-crazygames.zip` verified (adapter injected once, service worker stripped, icons bundled, syntax-checked).
+2. ✅ Done — polish pass added **additively** to `munchy-cg-adapter.js` (v1.1), so it applies on GitHub Pages/PWA too, not just the CrazyGames build:
+   - Richer Munchy idle animation — replaced the plain "breathe" with a gentle multi-step walk/bounce cycle (`#creatureWrap`/`mmWalk` keyframes). The game's own `.pop`/`.wobble` tap-feedback classes still take priority (they use `!important`), so nothing about tap feedback changed.
+   - Layered sound design — a soft harmonic chime plays under correct answers, and a 5-note ascending fanfare plays on level-up. Runs through the same patched `AudioContext` as the rest of the adapter, so portal `muteAudio` compliance still covers it.
+   - Background scene per level tier — every few levels the background gradient (`--bg1`/`--bg2`) and the drifting math symbols re-theme (dawn → sunset → night sky → "legendary" gold/purple at level 7+).
+   - Bigger level-up moment — a large "LEVEL UP!" banner, a full-screen flash, and a double confetti burst, layered on top of the existing streak-milestone celebration.
+   - All of it is observed off existing DOM elements (`#level`, `#score`) via `MutationObserver` and wrapped in `safe()`/try-catch, matching the rest of the adapter's "never break the game" design — worst case on any error is a silent no-op, not a crash.
+   - Verified: `node --check` passes on the adapter, the rebuilt zip contains the updated adapter byte-for-byte, and the built `index.html` still has exactly one adapter `<script>` tag and zero leftover service-worker registrations. (Couldn't run a full headless-browser execution test — no network access to install jsdom in this sandbox — but every new code path is defensively wrapped, so failure mode is "feature doesn't show up," never a broken game.)
+3. ⏳ Not done — optional adapter variants for GameDistribution/GamePix SDKs. Skipped tonight to focus on CrazyGames readiness; still worth doing after CrazyGames submission.
+4. ⏳ Not done — reuse pipeline for the English-learning game. Future project once Munchy Math is live.
+
+### What's left that only you can do
+- **Push to GitHub.** This session's folder still isn't a git working copy — I edited files directly in your connected folder, but can't `git commit`/`push`. Sync/push the updated `index.html` and `munchy-cg-adapter.js` (and the rebuilt `munchy-math-crazygames.zip`, if you want it in the repo too) the same way you did last time.
+- **CrazyGames submission** (step 4 in this guide): create the developer account, upload `munchy-math-crazygames.zip`, run it through the QA preview tool, paste in the metadata below, and submit for review. I can't create accounts or submit on your behalf — this needs your login. If you'd like, next session I can walk through the portal side-by-side with you using browser tools once you're signed in, to catch anything before you hit submit.
