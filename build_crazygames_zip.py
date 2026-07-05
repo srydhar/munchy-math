@@ -33,9 +33,9 @@ def main():
 
     html = open(index_src, encoding="utf-8").read()
 
-    # 1. strip service-worker registration (any single statement form)
+    # 1. strip service-worker registration (whole register()...then()...catch(); chain)
     html, n_sw = re.subn(
-        r"navigator\.serviceWorker\.register\([^)]*\)(\.then\([^)]*\))?(\.catch\([^)]*\))?;?",
+        r"navigator\.serviceWorker\.register\([\s\S]*?\}\);",
         "/* sw disabled for portal build */", html)
 
     # 2. inject adapter before </body> (once)
