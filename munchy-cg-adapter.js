@@ -31,6 +31,21 @@
        intercepted via document-capture so it runs before the game's own
        click handler and replays faithfully afterward — no timers/energy
        ticking during the countdown
+   13. CrazyGames Data module integration (cross-device cloud save) — dual-
+       writes every localStorage call into CG.sdk.data with zero changes to
+       index.html, and migrates existing progress in either direction the
+       first time it runs on a given browser. Requires selecting "Yes, using
+       the Data Module" in the CrazyGames submission form's Progress Save
+       setting, or the SDK disables the module and this silently no-ops.
+   14. Sitelock — the game only renders on CrazyGames domains plus the
+       official srydhar.github.io / localhost / file:// origins (per
+       https://docs.crazygames.com/resources/html5/sitelock/). Anywhere
+       else the screens are hidden and a "play it here" message is shown
+       instead, so a copy-pasted zip can't be silently re-hosted.
+   15. Privacy/Terms notice — a small non-blocking link (home-screen footer
+       + a line in the Parent section) pointing to the game's Privacy
+       Policy, since the profile screen has a free-text name field (see
+       https://docs.crazygames.com/requirements/technical/#user-consent).
    ========================================================================== */
 (function () {
   "use strict";
@@ -109,6 +124,103 @@
   // never leave the portal's loading screen stuck waiting on it.
   setTimeout(function () { splashDone = true; maybeStopLoading(); }, 8000);
 
+  /* ------------------------------------------------------------------ *
+   * CrazyGames Data module — cross-device cloud save.                  *
+   *                                                                     *
+   * The game already saves everything through plain localStorage (see  *
+   * Profiles/Mastery/Treats/Goal modules in index.html). The Data      *
+   * module has the exact same get/setItem/removeItem/clear API, so no  *
+   * game code needs to change — we dual-write every localStorage call  *
+   * into CG.sdk.data going forward, which is what actually persists    *
+   * reliably inside the CrazyGames iframe and syncs across devices for *
+   * logged-in users (CrazyGames warns plain localStorage isn't         *
+   * reliable there — this fixes exactly that).                        *
+   *                                                                     *
+   * Because this script loads last, the game's own modules have        *
+   * already hydrated once from local storage by the time this runs.    *
+   * For repeat visits on the SAME device that's harmless — we always   *
+   * mirror writes back into real localStorage too, so it stays         *
+   * current. For a brand-new device (or cleared browser) that already  *
+   * has cloud progress under this CrazyGames account, we detect that   *
+   * on this pass, copy it down into localStorage, and reload the page  *
+   * exactly once (guarded via sessionStorage) so the game re-hydrates  *
+   * from the now-populated local data.                                 *
+   * ------------------------------------------------------------------ */
+  function hookDataModule() {
+    if (!active() || !CG.sdk || !CG.sdk.data) return;
+    var data = CG.sdk.data;
+    var realGet = Storage.prototype.getItem;
+    var realSet = Storage.prototype.setItem;
+    var realRemove = Storage.prototype.removeItem;
+    var realClear = Storage.prototype.clear;
+    var PROFILE_BASES = ["munchy", "munchyMastery", "munchyTreats", "munchyGoal", "munchyLearn", "munchyTricks"];
+    var GLOBAL_KEYS = ["munchyProfiles", "munchyVoice"];
+
+    var didReload = false;
+    safe(function () {
+      if (sessionStorage.getItem("mmCgDataSyncDone")) return;
+      sessionStorage.setItem("mmCgDataSyncDone", "1");
+      var pulledDown = false;
+      function pull(key) {
+        var cloudVal = data.getItem(key);
+        var localVal = realGet.call(localStorage, key);
+        if (cloudVal !== null && cloudVal !== undefined && cloudVal !== localVal) {
+          realSet.call(localStorage, key, cloudVal);
+          pulledDown = true;
+        }
+      }
+      GLOBAL_KEYS.forEach(pull);
+      // discover profile ids from the (possibly just-pulled-down) profile list
+      // so we can pull each profile's namespaced keys down too
+      safe(function () {
+        var raw = realGet.call(localStorage, "munchyProfiles");
+        var profs = raw ? JSON.parse(raw).list : [];
+        profs.forEach(function (p) {
+          PROFILE_BASES.forEach(function (base) { pull(base + "::" + p.id); });
+        });
+      });
+      if (pulledDown) {
+        // also back up anything local-only that the cloud didn't have, then reload
+        // once so the game re-hydrates from the now-complete localStorage.
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (data.getItem(k) === null) {
+            (function (kk) { safe(function () { data.setItem(kk, realGet.call(localStorage, kk)); }); })(k);
+          }
+        }
+        didReload = true;
+        location.reload();
+        return;
+      }
+      // no cloud data yet (first time this account/guest has played, or this is
+      // the first load since integrating the Data module) — push existing local
+      // progress up so it's backed up going forward.
+      for (var j = 0; j < localStorage.length; j++) {
+        var lk = localStorage.key(j);
+        if (data.getItem(lk) === null) {
+          (function (kk) { safe(function () { data.setItem(kk, realGet.call(localStorage, kk)); }); })(lk);
+        }
+      }
+    });
+    if (didReload) return;
+
+    Storage.prototype.setItem = function (key, value) {
+      var r = realSet.call(this, key, value);
+      if (this === localStorage) safe(function () { data.setItem(key, value); });
+      return r;
+    };
+    Storage.prototype.removeItem = function (key) {
+      var r = realRemove.call(this, key);
+      if (this === localStorage) safe(function () { data.removeItem(key); });
+      return r;
+    };
+    Storage.prototype.clear = function () {
+      var r = realClear.call(this);
+      if (this === localStorage) safe(function () { data.clear(); });
+      return r;
+    };
+  }
+
   function hookSDK() {
     var s = document.createElement("script");
     s.src = "https://sdk.crazygames.com/crazygames-sdk-v3.js";
@@ -121,6 +233,8 @@
           safe(function () { CG.sdk.game.loadingStart(); });
           sdkReady = true;
           maybeStopLoading();
+          // ---- cross-device cloud save via the Data module ----
+          safe(hookDataModule);
           // ---- muteAudio compliance ----
           safe(function () {
             if (CG.sdk.game.settings && CG.sdk.game.settings.muteAudio) setMuted(true);
@@ -239,7 +353,10 @@
    * ------------------------------------------------------------------ */
   function injectDesktopCSS() {
     var css = [
-      "@media (min-width: 880px) and (min-height: 500px) {",
+      /* CrazyGames' documented non-fullscreen preview sizes run from 821x462 up */
+      /* to 1216x684 (all ~16:9) — this threshold is set just below their        */
+      /* smallest listed size so every one of them gets the pillarbox treatment. */
+      "@media (min-width: 800px) and (min-height: 440px) {",
       "  #app, .screen {",
       "    left: 50% !important; right: auto !important;",
       "    width: 520px !important; margin-left: -260px;",
@@ -755,6 +872,15 @@
       if (!t) return;
       ev.preventDefault();
       ev.stopImmediatePropagation();
+      // Report "gameplay start" to the SDK right now, at the moment the player's
+      // intent is registered — not after the cosmetic countdown. CrazyGames uses
+      // the time to this event to measure load performance (e.g. mobile-homepage
+      // eligibility), so it should reflect true responsiveness, not our 3-4s
+      // countdown flourish. The game's own internal start logic (and our regular
+      // gameplayStart() bubble-listener from hookGameplayEvents) still only run
+      // once the click is replayed below, which is fine — a duplicate SDK start
+      // ping is harmless.
+      gameplayStart();
       showGetReadyCountdown(function () {
         pending = true;
         safe(function () { t.click(); });
@@ -764,9 +890,98 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 15. Sitelock — only render on CrazyGames domains + our own known    *
+   *     origins. Everything is additive: if the check itself throws     *
+   *     for any reason, safe() swallows it and the game plays normally  *
+   *     (fail-open, never fail-closed on a bug in this file).           *
+   * ------------------------------------------------------------------ */
+  // Per https://docs.crazygames.com/resources/html5/sitelock/
+  function isCrazyGames() {
+    var hostname = window.location.hostname;
+    var parts = hostname.split(".");
+    var idx = parts.indexOf("crazygames");
+    return idx !== -1 && idx >= parts.length - 3;
+  }
+  // The Play Store / PWA build is just this same page loaded from GitHub
+  // Pages (PWABuilder wraps the live URL — it doesn't bundle a separate
+  // copy), so whitelisting the GitHub Pages host covers Play Store, PWA
+  // install, and "Add to Home Screen" too. localhost/127.0.0.1 and file://
+  // (empty hostname) cover local dev and the cg-build/ sanity-check step.
+  var ALLOWED_HOSTS = ["srydhar.github.io", "localhost", "127.0.0.1"];
+  function isAllowedHost() {
+    var h = window.location.hostname;
+    if (!h) return true; // file:// — local testing
+    if (isCrazyGames()) return true;
+    return ALLOWED_HOSTS.indexOf(h) !== -1;
+  }
+  function hookSitelock() {
+    if (isAllowedHost()) return;
+    Array.prototype.forEach.call(document.querySelectorAll("#app, .screen"), function (n) {
+      n.style.display = "none";
+    });
+    var msg = document.createElement("div");
+    msg.style.cssText = "position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;" +
+      "align-items:center;justify-content:center;gap:14px;text-align:center;padding:28px;" +
+      "background:linear-gradient(160deg,#7b5cff,#36d1dc);color:#fff;" +
+      "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;";
+    msg.innerHTML =
+      '<div style="font-size:46px;">🐾</div>' +
+      '<div style="font-size:22px;font-weight:900;">Munchy Math</div>' +
+      '<div style="font-size:15px;opacity:.9;max-width:320px;line-height:1.5;">' +
+      "This copy isn&rsquo;t available on this site. Play Munchy Math free on CrazyGames.</div>";
+    document.body.appendChild(msg);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 16. Privacy / Terms notice — a small, non-blocking link (per        *
+   *     https://docs.crazygames.com/requirements/technical/#user-consent) *
+   *     since the profile-creation screen has a free-text name field.   *
+   *     Two placements, both purely additive (no existing nodes moved): *
+   *       a) a faint footer link, shown only while the home screen is   *
+   *          visible (tracked via a class MutationObserver so it never  *
+   *          overlaps gameplay or other screens)                        *
+   *       b) a line inside the Parent section, the natural place for    *
+   *          the audience that actually cares about this notice.        *
+   * ------------------------------------------------------------------ */
+  var PRIVACY_URL = "https://srydhar.github.io/munchy-math/privacy.html";
+  function hookPrivacyLink() {
+    var home = document.getElementById("startScreen");
+    if (home) {
+      var link = document.createElement("a");
+      link.id = "mmPrivacyLink";
+      link.href = PRIVACY_URL;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = "Privacy & Terms";
+      link.style.cssText = "position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom,0px) + 4px);" +
+        "transform:translateX(-50%); z-index:51; font-size:10px; font-weight:700;" +
+        "color:rgba(255,255,255,.55); text-decoration:underline; letter-spacing:.2px;" +
+        "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;";
+      document.body.appendChild(link);
+      var sync = function () { link.style.display = home.classList.contains("hidden") ? "none" : "block"; };
+      sync();
+      safe(function () {
+        new MutationObserver(sync).observe(home, { attributes: true, attributeFilter: ["class"] });
+      });
+    }
+    var parent = document.getElementById("parentScreen");
+    if (parent) {
+      var note = document.createElement("p");
+      note.className = "miniNote";
+      note.style.cssText = "margin-top:14px;";
+      note.innerHTML = 'Munchy Math stores player names/progress only on this device' +
+        ' (or your CrazyGames account) — see our <a href="' + PRIVACY_URL +
+        '" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">' +
+        'Privacy Policy &amp; Terms</a>.';
+      parent.appendChild(note);
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
    * boot                                                               *
    * ------------------------------------------------------------------ */
   function boot() {
+    safe(hookSitelock);
     safe(injectDesktopCSS);
     safe(buildAndRunSplash);
     safe(hookPlayCountdown);
@@ -776,6 +991,7 @@
     safe(hookHUD);
     safe(hookLevelScenes);
     safe(hookCorrectChime);
+    safe(hookPrivacyLink);
     safe(hookSDK);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

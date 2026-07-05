@@ -32,6 +32,7 @@
   #thought{background:#fff; color:var(--ink); border-radius:26px; padding:13px 22px; font-size:34px; font-weight:900; box-shadow:0 10px 26px rgba(0,0,0,.18); position:relative; margin-bottom:4px; letter-spacing:1px;}
   #thought:after{content:""; position:absolute; bottom:-12px; left:50%; transform:translateX(-50%); border:12px solid transparent; border-top-color:#fff;}
   #creatureWrap{position:relative; transition:transform .2s cubic-bezier(.34,1.56,.64,1); animation:breathe 3.4s ease-in-out infinite;}
+  #startCreature svg{width:clamp(46px,18vmin,100px); height:clamp(46px,18vmin,100px);}
   .accOverlay{position:absolute; top:-2px; left:50%; transform:translateX(-50%); font-size:38px; pointer-events:none; line-height:1;}
   @keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.015)}}
   .pop{animation:pop .4s !important;}
@@ -62,15 +63,15 @@
   }
   #startScreen .sub{display:none;}
   .hidden{display:none !important;}
-  h1.logo{font-size:clamp(30px,8vw,44px); color:#fff; margin:-4px 0 0; text-shadow:0 6px 0 rgba(0,0,0,.12); letter-spacing:1px;}
+  h1.logo{font-size:clamp(22px,8vmin,44px); color:#fff; margin:-4px 0 0; text-shadow:0 6px 0 rgba(0,0,0,.12); letter-spacing:1px;}
   .sub{color:#fff; opacity:.92; font-size:16px; margin:0 0 4px; max-width:430px; font-weight:600;}
-  .btn{background:var(--accent); color:var(--ink); border:none; border-radius:18px; padding:clamp(11px,2vh,15px) 28px; font-size:clamp(18px,4.5vw,21px); font-weight:900; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15); transition:transform .08s, box-shadow .08s;}
+  .btn{background:var(--accent); color:var(--ink); border:none; border-radius:18px; padding:clamp(11px,2vh,15px) 28px; font-size:clamp(15px,4.5vmin,21px); font-weight:900; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15); transition:transform .08s, box-shadow .08s;}
   .btn:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.12);}
   .btn.alt{background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.10);}
   .btn.alt:active{transform:scale(0.97); box-shadow:0 1px 4px rgba(0,0,0,.08);}
-  .btn.small{padding:clamp(9px,1.6vh,11px) 16px; font-size:clamp(13px,3.2vw,16px);}
+  .btn.small{padding:clamp(9px,1.6vh,11px) 16px; font-size:clamp(11px,3.2vmin,16px);}
   .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
-  .chip{background:rgba(255,255,255,.2); color:#fff; border:3px solid transparent; border-radius:16px; padding:clamp(7px,1.6vh,11px) clamp(11px,3vw,17px); font-size:clamp(18px,5vw,23px); font-weight:900; cursor:pointer; min-width:52px;}
+  .chip{background:rgba(255,255,255,.2); color:#fff; border:3px solid transparent; border-radius:16px; padding:clamp(6px,1.6vh,11px) clamp(9px,3vmin,17px); font-size:clamp(15px,5vmin,23px); font-weight:900; cursor:pointer; min-width:52px;}
   .chip.on{background:#fff; color:var(--ink); border-color:var(--accent);}
   .label{color:#fff; font-weight:800; opacity:.9; margin-top:2px; font-size:14px;}
   .scoreBig{font-size:60px; font-weight:900; color:#fff; margin:0; text-shadow:0 6px 0 rgba(0,0,0,.12);}
@@ -1077,7 +1078,7 @@ window.Speak=(function(){
   <div class="topbar"><button class="btn alt small" id="formBack">◀ Back</button><div id="formTitle" style="color:#fff; font-weight:900; font-size:18px;"></div><div style="width:54px;"></div></div>
   <div id="formAvatarPreview"></div>
   <div class="label" id="pfNameLabel">Name</div>
-  <input id="pfName" type="text" maxlength="14" placeholder="Type a name" style="font-size:18px; font-weight:800; padding:10px 14px; border-radius:14px; border:none; text-align:center; width:80%; max-width:280px; color:#23204d;" />
+  <input id="pfName" type="text" maxlength="14" placeholder="Type your profile name" style="font-size:18px; font-weight:800; padding:10px 14px; border-radius:14px; border:none; text-align:center; width:80%; max-width:280px; color:#23204d;" />
   <div class="label" id="pfGenderLabel">I am a…</div>
   <div class="row" id="pfGenderRow"></div>
   <div class="label" id="pfAgeLabel">Age</div>
